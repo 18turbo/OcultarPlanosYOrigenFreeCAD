@@ -1,0 +1,85 @@
+import FreeCAD
+
+# Autor:			18Turbo
+# Fecha:		27-06-2022
+# Versión:		0.9.2 Candidata
+#	
+# Funcionalidad:	Oculta/Muestra los planos, ejes y origen de referencia de todos los objetos
+#
+# Descripción:	Al pinchar la macro (o el botón en la barra de herramientas), su comportamiento siempre es de apagar todos
+#				planos y ejes de referencia de origen, pero en el caso de que todos ya estén apagados, hace el comportamiento contrario,
+#				es decir, encender los planos y ejes de referencia de origen de TODAS los objetos que posean esta propiedad
+#
+# Notas:			Por defecto, FreeCAD deja "Origin" no visible cuando se crea un Part, pero sin embargo los planos y ejes de referencia
+#				de origen inicialmente están activados. Eso implica, que la primera vez que se pulsa el botón de esta macro se activa
+#				el Origen. En caso de tener varios objetos con la misma forma inicial predeterminada, el comportamiento de la macro
+#				es apagar todos los ejes y planos de origen de todos los objetos menos el primero, que será el que deje activo. Podría 
+#				mejorarse aún más si se dejara activo el que tuviera el foco en ese momento (aunque parece menos problemático el
+#				comportamiento de esta macro).
+# Notas adicionales:	Esta macro funcionará siempre y cuando la estructura de Origin junto a sus ejes y planos no varíe con el paso de
+#				las versiones de FreeCAD, algo que parece que no pasará.
+#
+# Notas de versiones:
+# v.0.9.2:		Corregido el comportamiento inicial de la macro.
+
+try:
+    apagando = False
+    marca = 0
+    contadorRecorrido = 0
+    encendido = True
+
+    for recorrido in FreeCAD.ActiveDocument.Objects:
+    # Recorro el array de objetos del documento activo
+        
+        if (recorrido.Name.find('Origin') > -1):
+        # Si encuentro objetos que se llame como el origen
+
+            if (FreeCADGui.ActiveDocument.getObject(recorrido.Name).Visibility == False):
+                marca = contadorRecorrido                
+                encendido = True
+            else:
+                FreeCADGui.ActiveDocument.getObject(recorrido.Name).Visibility = False
+                encendido = False
+
+            contadorRecorrido = contadorRecorrido + 1
+            apagando = True
+            # Pongo 'apagando' a True para indicar que acabo de apagar un objeto,
+            # por lo que no debo hacer inicialmente el recorrido de mostrar los planos y ejes de referencia de origen
+            continue
+
+        if ((recorrido.Name.find('X_Axis') > -1) or (recorrido.Name.find('Y_Axis') > -1) or (recorrido.Name.find('Z_Axis') > -1) or
+           (recorrido.Name.find('XY_Plane') > -1) or (recorrido.Name.find('XZ_Plane') > -1) or (recorrido.Name.find('YZ_Plane') > -1)):
+           # Si encuentro objetos que se llamen como los planos y ejes de referencia de origen
+
+            apagando = FreeCADGui.ActiveDocument.getObject(recorrido.Name).Visibility
+            encendido = encendido and apagando
+            FreeCADGui.ActiveDocument.getObject(recorrido.Name).Visibility = False            
+
+        if ((contadorRecorrido) == 7) and (encendido == True):
+        # Si hemos encontrado un Origin y la variable 'encendido' se mantiene a verdadero
+
+            for contador in range(7):
+            # Recorre las posiciones de Origin, y sus 3 ejes y sus 3 planos, mostrando cada una
+                FreeCADGui.ActiveDocument.getObject(FreeCAD.ActiveDocument.Objects[marca + contador].Name).Visibility = True
+            apagando = False
+
+        contadorRecorrido = contadorRecorrido + 1
+
+
+    if apagando == False:
+    # Si no he estado apagando los planos de referencia, debo poner todos visibles
+
+        for recorrido in FreeCAD.ActiveDocument.Objects:
+        # Recorro el array de objetos del documento activo
+
+            if ((recorrido.Name.find('X_Axis') > -1) or (recorrido.Name.find('Y_Axis') > -1) or (recorrido.Name.find('Z_Axis') > -1) or
+               (recorrido.Name.find('XY_Plane') > -1) or (recorrido.Name.find('XZ_Plane') > -1) or (recorrido.Name.find('YZ_Plane') > -1) or
+               (recorrido.Name.find('Origin') > -1)):
+               # Si encuentro objetos que se llamen como los planos y ejes de referencia de origen
+
+               # La visibilidad del objeto la pongo a verdadero, para que la muestre
+               FreeCADGui.ActiveDocument.getObject(recorrido.Name).Visibility = True
+
+
+except Exception:
+    None
